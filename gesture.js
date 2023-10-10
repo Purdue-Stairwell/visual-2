@@ -1,40 +1,28 @@
 let inc = 0.05;
 
 class Gesture {
-  constructor(seed, colorVar, girth, cap, join, x, y, speed, wiggle, smoothness) {
+    //colorIndex, agitatedness, speed, size, sprite, base, x, y, points
+  constructor(seed, colorVar, colorIndex, girth, x, y, base, skin, points) {
     this.seed = seed;
-    this.points = [];
+    this.points = [...points];
     this.color = colorVar;
+    this.colorIndex = colorIndex;
     this.girth = girth;
-    this.cap = cap;
-    this.join = join;
     this.pos = createVector(x, y);
     this.vel = createVector(0, 0);
     this.acc = createVector(0, 0);
-    this.maxSpeed = speed;
-    this.wiggle = wiggle;
-    this.smooth = smoothness;
+    this.maxSpeed = 10;
+    this.wiggle = 10;
+    this.smoothness = 1;
     this.scl = 50;
+
+    this.base = base
+    this.skin = skin
   }
 
   addPoint(x, y) {
     let newPoint = createVector(x, y);
     this.points.push(newPoint);
-  }
-
-  render() {
-    stroke(this.color);
-    strokeWeight(this.girth);
-    editStrokeAttributes(this.cap, this.join);
-    noFill();
-    push();
-    translate(this.pos.x, this.pos.y);
-    beginShape();
-    this.points.forEach((p) => {
-      vertex(p.x, p.y);
-    });
-    endShape();
-    pop();
   }
 
   update(time) {
@@ -50,30 +38,44 @@ class Gesture {
     this.vel.limit(this.maxSpeed);
     this.pos.add(this.vel);
     this.acc.mult(0);
-
-    let stillIn = false;
-    this.points.forEach((p) => {
-      if (p.x > -width / 2 && p.x < width / 2 && p.y > -height / 2 && p.y < height / 2) {
-        stillIn = true;
-      }
-    });
-    if (!stillIn) {
-      console.log(stillIn);
-    }
-    stillIn = false;
-    if (this.pos.x > width / 2 + 200 && !stillIn) {
-      this.pos.x = -width / 2 - 150;
-    }
-    if (this.pos.x < -width / 2 - 200 && !stillIn) {
-      this.pos.x = width / 2 + 150;
-    }
-    if (this.pos.y > height / 2 + 200 && !stillIn) {
-      this.pos.y = -height / 2 - 150;
-    }
-    if (this.pos.y < -height / 2 - 200 && !stillIn) {
-      this.pos.y = height / 2 + 150;
-    }
   }
+
+    drawSprites(time) {
+        // draw sprites
+        for (let i = 0; i < (this.points.length - 1); i+=2) {
+            console.log(base_sprites[this.base][this.colorIndex]);
+            let baseSize = 60*this.size;
+            let skinSize = 40*this.size;
+            //    image to display                    x start                            y start                            width           height
+            image(base_sprites[this.base][this.colorIndex], this.points[i].x - baseSize/2, this.points[i].y - baseSize/2, baseSize, baseSize);
+            image(skin_sprites[this.skin][this.colorIndex], this.points[i].y - skinSize/2, this.points[i].y - skinSize/2, skinSize, skinSize);
+        } 
+    }
+
+    boundingCheck() {
+        let stillIn = false;
+        this.points.forEach((p) => {
+        if (p.x > -width / 2 && p.x < width / 2 && p.y > -height / 2 && p.y < height / 2) {
+            stillIn = true;
+        }
+        });
+        if (!stillIn) {
+        console.log(stillIn);
+        }
+        stillIn = false;
+        if (this.pos.x > width / 2 + 200 && !stillIn) {
+        this.pos.x = -width / 2 - 150;
+        }
+        if (this.pos.x < -width / 2 - 200 && !stillIn) {
+        this.pos.x = width / 2 + 150;
+        }
+        if (this.pos.y > height / 2 + 200 && !stillIn) {
+        this.pos.y = -height / 2 - 150;
+        }
+        if (this.pos.y < -height / 2 - 200 && !stillIn) {
+        this.pos.y = height / 2 + 150;
+        }
+    }
 
   normalizePoints() {
     for (let i = 1; i < this.points.length; i++) {
@@ -89,86 +91,62 @@ class Gesture {
   drawBezier(time) {
     stroke(this.color);
     strokeWeight(this.girth);
-    editStrokeAttributes(this.cap, this.join);
+    strokeCap(ROUND);
+    strokeJoin(ROUND);
     noFill();
     push();
-    translate(this.pos.x, this.pos.y);
-    beginShape();
-    //draw first point if points exist
-    if (this.points.length > 0) {
-      let offsetX0 = map(
-        noise(sin(time * 20), this.seed),
-        0,
-        1,
-        -this.wiggle,
-        this.wiggle
-      );
-      let offsetY0 = map(
-        noise(cos(time * 20), this.seed),
-        0,
-        1,
-        -this.wiggle,
-        this.wiggle
-      );
-      vertex(this.points[0].x + offsetX0, this.points[0].y + offsetY0);
-    }
-    //iterate through the rest of the points and calc control points and add bezier
-    for (let i = 1; i < this.points.length - 2; i += 2) {
-      let offsetX = map(
-        noise(sin(time * 20 + i), this.seed),
-        0,
-        1,
-        -this.wiggle,
-        this.wiggle
-      );
-      let offsetY = map(
-        noise(cos(time * 20 + i), this.seed),
-        0,
-        1,
-        -this.wiggle,
-        this.wiggle
-      );
-      let x1 = (this.points[i].x + this.points[i + 1].x) / 2;
-      let y1 = (this.points[i].y + this.points[i + 1].y) / 2;
-      let x2 = (this.points[i + 1].x + this.points[i + 2].x) / 2;
-      let y2 = (this.points[i + 1].y + this.points[i + 2].y) / 2;
-      let x3 = this.points[i + 2].x;
-      let y3 = this.points[i + 2].y;
-      bezierVertex(
-        x1 + offsetX,
-        y1 + offsetY,
-        x2 + offsetX,
-        y2 + offsetY,
-        x3 + offsetX,
-        y3 + offsetY
-      );
-    }
-    endShape();
+        translate(this.pos.x, this.pos.y);
+        beginShape();
+        //draw first point if points exist
+        if (this.points.length > 0) {
+        let offsetX0 = map(
+            noise(sin(time * 20), this.seed),
+            0,
+            1,
+            -this.wiggle,
+            this.wiggle
+        );
+        let offsetY0 = map(
+            noise(cos(time * 20), this.seed),
+            0,
+            1,
+            -this.wiggle,
+            this.wiggle
+        );
+        vertex(this.points[0].x + offsetX0, this.points[0].y + offsetY0);
+        }
+        //iterate through the rest of the points and calc control points and add bezier
+        for (let i = 1; i < this.points.length - 2; i += 2) {
+        let offsetX = map(
+            noise(sin(time * 20 + i), this.seed),
+            0,
+            1,
+            -this.wiggle,
+            this.wiggle
+        );
+        let offsetY = map(
+            noise(cos(time * 20 + i), this.seed),
+            0,
+            1,
+            -this.wiggle,
+            this.wiggle
+        );
+        let x1 = (this.points[i].x + this.points[i + 1].x) / 2;
+        let y1 = (this.points[i].y + this.points[i + 1].y) / 2;
+        let x2 = (this.points[i + 1].x + this.points[i + 2].x) / 2;
+        let y2 = (this.points[i + 1].y + this.points[i + 2].y) / 2;
+        let x3 = this.points[i + 2].x;
+        let y3 = this.points[i + 2].y;
+        bezierVertex(
+            x1 + offsetX,
+            y1 + offsetY,
+            x2 + offsetX,
+            y2 + offsetY,
+            x3 + offsetX,
+            y3 + offsetY
+        );
+        }
+        endShape();
     pop();
-  }
-}
-
-function editStrokeAttributes(cap, join) {
-  switch (cap) {
-    case "ROUND":
-      strokeCap(ROUND);
-      break;
-    case "SQUARE":
-      strokeCap(SQUARE);
-      break;
-    case "PROJECT":
-      strokeCap(PROJECT);
-      break;
-  }
-  switch (join) {
-    case "MITER":
-      strokeJoin(MITER);
-      break;
-    case "BEVEL":
-      strokeJoin(BEVEL);
-      break;
-    case "ROUND":
-      strokeJoin(ROUND);
-      break;
   }
 }

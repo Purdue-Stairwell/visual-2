@@ -47,69 +47,100 @@ function setup() {
 	frameRate(24);
 }
 function draw() {
-    space(width, height, 200, 2);
+    //space(width, height, 200, 2);
+    imageMode(CENTER);
+    image(mask, width/2, height/2, width, height);
 
 	push();
-        //scale(0.5);
         translate(width / 2, height / 2);
         gests.forEach((g) => {
             g.update(t);
             g.drawBezier(t);
+            g.drawSprites(t);
         });
 	pop();
 
 	t += 0.0005;
 }
 
-socket.on("server to gesture", (points, red, green, blue, alpha, girth, cap, join, speed, wiggle, smoothness) => {
-	console.log("recieved data");
-	if (gests.length > 20) {
-		gests.shift();
+function mouseClicked() {
+		if (gests.length > 20) {
+			gests.shift();
+		}
+        points = [
+            createVector(0, 0),
+            createVector(40, 0),
+            createVector(40, 40),
+            createVector(80, 40),
+            createVector(80, 80),
+        ]
+		let newGest = new Gesture(random(10), "#4d26db", colorToIndex("#4d26db"), random(10,50), mouseX-width/2, mouseY-height/2, pathToSprite("/anim/base/heart.gif"), pathToSprite("/anim/newblob.gif"), points);
+		newGest.normalizePoints();
+		gests.push(newGest);
+}
+
+function colorToIndex(colorVar) {
+	switch (colorVar) {
+		case "#4d26db":
+			return (0);
+		case "#05a59d":
+			return (1);
+		case "#f6921e":
+			return (2);
+		case "#ec1d23":
+			return (3);
+		case "#ec008b":
+			return (4);
+		default:
+			return (0);
 	}
-	gests.push(
-		//seed, colorVar, girth, cap, join, x, y, speed, wiggle, smoothness
-		new Gesture(
-			random(99999),
-			color(red, green, blue, alpha),
-			girth,
-			cap,
-			join,
-			random(-width / 3, width / 3),
-			random(-height / 3, height / 3),
-			speed,
-			wiggle,
-			smoothness
-		)
-	);
-	gests[gests.length - 1].points = [...points];
+}
+
+function pathToSprite(path) {
+	switch (path) {
+		case "/anim/newblob.gif":
+		case "/anim/base/circle.gif":
+			return (0);
+		case "/anim/drops.gif":
+		case "/anim/base/cloud.gif":
+			return (1);
+		case "/anim/sprite03.gif":
+		case "/anim/base/cube.gif":
+			return (2);
+		case "/anim/star01.gif":
+		case "/anim/base/heart.gif":
+			return (3);
+		case "/anim/head.gif":
+		case "/anim/base/spikey.gif":
+			return (4);
+		default:
+			return (0);
+	}
+}
+
+socket.on("backend to visual", (points, who5, sprite, colorVar, base) => {
+	console.log("Color: " + colorVar + " Who5: " + who5 + " Sprite: " + sprite + " Base: " + base);
+	if (points !== null && colorVar !== null) {
+		if (gests.length > 20) {
+			gests.shift();
+		}
+		let newGest = new Gesture(random(10), colorVar, colorToIndex(colorVar), random(10,50), 0, 0, pathToSprite(base), pathToSprite(sprite), points);
+		newGest.normalizePoints();
+		gests.push(newGest);
+	}
+	else {
+		console.log("Missing Either Color Or Points");
+	}
 });
 
-document.addEventListener("click", () => {
-	if (gests.length > 20) {
-		gests.shift();
-	}
-	gests.push(
-		new Gesture(
-			//seed, hue, girth, cap, join, x, y, speed, wiggle, smoothness
-			random(99999), // seed
-			color(200, 10, 89, 128), // hue
-			random(120) + 20, // girth
-			random(caps), // cap
-			random(joins), // join
-			random(-width / 3, width / 3), // x
-			random(-height / 3, height / 3), // y
-			random(1, 5), // speed
-			random(10, 400), //wiggle
-			random(1, 10) //smoothness
-		)
-	);
-	gests[gests.length - 1].addPoint(-10, 10);
-	gests[gests.length - 1].addPoint(10, 10);
-	gests[gests.length - 1].addPoint(20, 20);
-	gests[gests.length - 1].addPoint(30, 30);
-	gests[gests.length - 1].addPoint(100, -100);
-	gests[gests.length - 1].addPoint(-100, 100);
-});
+function hexToRgb(hex) {
+	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	return result ? {
+		r: parseInt(result[1], 16),
+		g: parseInt(result[2], 16),
+		b: parseInt(result[3], 16)
+	} : null;
+}
 
 // draw space background
 function space(w, h, star_count, star_size) {
