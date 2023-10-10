@@ -6,21 +6,56 @@ const joins = ["MITER", "BEVEL", "ROUND"];
 let gests = [];
 let t = 0;
 
+
+// arrays of sprites
+let base_sprites = [];
+let skin_sprites = [];
+
+// arrays of sprite names
+names = [ "bread", "drops", "rombo", "star", "swirl" ];
+base_names = ["circle", "cloud", "cube", "heart", "spiky" ];
+
+// collision mask
+let mask;
+
+// stars
+let star_x = [],
+	star_y = [],
+	stars_made = false
+    names = ["bread", "drops", "rombo", "star", "swirl"];
+
+
+    // preload images
+function preload() {
+	for (let i = 0; i < names.length; i++) {
+		let gifs = new Array();
+		let base_gifs = new Array();
+
+		for (let j = 0; j < 5; j++) {
+			gifs[j] = loadImage("./assets/sprites/skin/" + names[i] + "/" + j + ".gif");
+			gifs[j] = loadImage("./assets/sprites/base/" + base_names[i] + "/" + j + ".gif");
+		}
+		base_sprites.push(gifs);
+		skin_sprites.push(base_gifs);
+	}
+
+	mask = loadImage("./assets/LEDmask.png");
+}
+
 function setup() {
-	createCanvas(windowWidth, windowHeight);
-	frameRate(60);
+	createCanvas(mask.width, mask.height);
+	frameRate(24);
 }
 function draw() {
-	background(0);
-	setGradient(0, 0, width, height, color(134, 219, 216), color(38, 34, 98));
+    space(width, height, 200, 2);
 
 	push();
-	//scale(0.5);
-	translate(width / 2, height / 2);
-	gests.forEach((g) => {
-		g.update(t);
-		g.drawBezier(t);
-	});
+        //scale(0.5);
+        translate(width / 2, height / 2);
+        gests.forEach((g) => {
+            g.update(t);
+            g.drawBezier(t);
+        });
 	pop();
 
 	t += 0.0005;
@@ -76,13 +111,31 @@ document.addEventListener("click", () => {
 	gests[gests.length - 1].addPoint(-100, 100);
 });
 
-function setGradient(x, y, w, h, c1, c2) {
+// draw space background
+function space(w, h, star_count, star_size) {
 	noStroke();
-	for (let i = y; i <= y + h; i += h / 10) {
-		let inter = map(i, y, y + h, 0, 1);
-		let c = lerpColor(c1, c2, inter);
-		fill(c);
-		rectMode(CORNERS);
-		rect(x, i, x + w, i + h / 10);
+	fill(0);
+	rectMode(CORNERS);
+	rect(0, 0, w, h);
+
+	if (stars_made == false) {
+		for (let i = 0; i <= star_count - 1; i++) {
+			star_x[i] = Math.floor(Math.random() * w);
+			star_y[i] = Math.floor(Math.random() * h);
+			stars_made = true;
+		}
+	}
+
+	for (let i = 0; i <= star_count - 1; i++) {
+		fill(255);
+		circle(star_x[i], star_y[i], star_size);
+		star_y[i] += 0.1;
+		if (Math.floor(Math.random() * 15) % 15 == 0) {
+			star_x[i] += (Math.floor(Math.random() * 3) - 1);
+		}
+		if (star_x[i] >= w || star_y[i] >= h) {
+			star_x[i] = Math.floor(Math.random() * w);
+			star_y[i] = Math.floor(Math.random() * h);
+		}
 	}
 }
