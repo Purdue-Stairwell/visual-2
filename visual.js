@@ -1,5 +1,3 @@
-import { io } from "socket.io-client";
-
 const socket = io("wss://navinate.com", { secure: true });
 console.log("connected to websocket");
 
@@ -32,15 +30,17 @@ let spawn_pos;
     // preload images
 function preload() {
 	for (let i = 0; i < names.length; i++) {
-		let gifs = new Array();
-		let base_gifs = new Array();
+		let gifs = [];
+		let base_gifs = [];
 
 		for (let j = 0; j < 5; j++) {
 			gifs[j] = loadImage("./assets/sprites/skin/" + names[i] + "/" + j + ".gif");
+		}
+		for (let j = 0; j < 5; j++) {
 			base_gifs[j] = loadImage("./assets/sprites/base/" + base_names[i] + "/" + j + ".gif");
 		}
-		base_sprites.push(gifs);
-		skin_sprites.push(base_gifs);
+		base_sprites.push(base_gifs);
+		skin_sprites.push(gifs);
 	}
 	spawn_gif = loadImage("./assets/sprites/spawn.gif");
 	mask = loadImage("./assets/LEDmask.png");
@@ -73,7 +73,7 @@ socket.on("backend to visual", (points, who5, sprite, colorVar, base) => {
 		if (gests.length > 20) {
 			gests.shift();
 		}
-		let newGest = new Gesture(colorVar, colorToIndex(colorVar), width/2, height/2, pathToSprite(base), pathToSprite(sprite), points);
+		let newGest = new Gesture(colorVar, colorToIndex(colorVar), width/2, height/2, pathToSprite(sprite), pathToSprite(base), points);
 		newGest.normalizePoints();
 		gests.push(newGest);
 		spawn_pos = createVector(width/2, height/2);
@@ -98,7 +98,8 @@ function mouseClicked() {
 			createVector(340, 240),
 			createVector(380, 280),
         ]
-		let newGest = new Gesture("#4d26db", colorToIndex("#4d26db"), mouseX, mouseY, pathToSprite("/anim/base/heart.gif"), pathToSprite("/anim/newblob.gif"), points);
+		//                         color     colorIndex               x       y       skin,  base, points
+		let newGest = new Gesture("#4d26db", colorToIndex("#4d26db"), mouseX, mouseY, 0,     3,    points);
 		newGest.normalizePoints();
 		gests.push(newGest);
 		spawn_pos = createVector(mouseX, mouseY);
@@ -137,7 +138,7 @@ function pathToSprite(path) {
 		case "/anim/base/heart.gif":
 			return (3);
 		case "/anim/head.gif":
-		case "/anim/base/spikey.gif":
+		case "/anim/base/spiky.gif":
 			return (4);
 		default:
 			return (0);
