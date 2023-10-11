@@ -19,11 +19,13 @@ base_names = ["circle", "cloud", "cube", "heart", "spiky" ];
 let mask;
 
 // stars
-let star_x = [],
-	star_y = [],
-	stars_made = false
-    names = ["bread", "drops", "rombo", "star", "swirl"];
+let star_x = [];
+let star_y = [];
+let stars_made = false;
 
+//spawn stuff
+let playcount = -1;
+let spawn_pos;
 
     // preload images
 function preload() {
@@ -33,35 +35,52 @@ function preload() {
 
 		for (let j = 0; j < 5; j++) {
 			gifs[j] = loadImage("./assets/sprites/skin/" + names[i] + "/" + j + ".gif");
-			gifs[j] = loadImage("./assets/sprites/base/" + base_names[i] + "/" + j + ".gif");
+			base_gifs[j] = loadImage("./assets/sprites/base/" + base_names[i] + "/" + j + ".gif");
 		}
 		base_sprites.push(gifs);
 		skin_sprites.push(base_gifs);
 	}
-
+	spawn_gif = loadImage("./assets/sprites/spawn.gif");
 	mask = loadImage("./assets/LEDmask.png");
 }
 
 function setup() {
 	createCanvas(mask.width, mask.height);
 	frameRate(24);
+	spawn_pos = createVector(width/2, height/2);
 }
 function draw() {
     //space(width, height, 200, 2);
     imageMode(CENTER);
     image(mask, width/2, height/2, width, height);
-
-	push();
-        translate(width / 2, height / 2);
         gests.forEach((g) => {
             g.update(t);
-            g.drawBezier(t);
+			g.drawNormalPoints(t);
             g.drawSprites(t);
+			g.boundingCheck();
         });
-	pop();
+	
+	spawn(0.8, 5, 10);
 
-	t += 0.0005;
+	t += 0.1;
 }
+
+socket.on("backend to visual", (points, who5, sprite, colorVar, base) => {
+	console.log("Color: " + colorVar + " Who5: " + who5 + " Sprite: " + sprite + " Base: " + base);
+	if (points !== null && colorVar !== null) {
+		if (gests.length > 20) {
+			gests.shift();
+		}
+		let newGest = new Gesture(colorVar, colorToIndex(colorVar), width/2, height/2, pathToSprite(base), pathToSprite(sprite), points);
+		newGest.normalizePoints();
+		gests.push(newGest);
+		spawn_pos = createVector(width/2, height/2);
+		playcount = 0;
+	}
+	else {
+		console.log("Missing Either Color Or Points");
+	}
+});
 
 function mouseClicked() {
 		if (gests.length > 20) {
@@ -69,14 +88,19 @@ function mouseClicked() {
 		}
         points = [
             createVector(0, 0),
-            createVector(40, 0),
             createVector(40, 40),
-            createVector(80, 40),
             createVector(80, 80),
+            createVector(120, 120),
+            createVector(160, 160),
+			createVector(300, 200),
+			createVector(340, 240),
+			createVector(380, 280),
         ]
-		let newGest = new Gesture(random(10), "#4d26db", colorToIndex("#4d26db"), random(10,50), mouseX-width/2, mouseY-height/2, pathToSprite("/anim/base/heart.gif"), pathToSprite("/anim/newblob.gif"), points);
+		let newGest = new Gesture("#4d26db", colorToIndex("#4d26db"), mouseX, mouseY, pathToSprite("/anim/base/heart.gif"), pathToSprite("/anim/newblob.gif"), points);
 		newGest.normalizePoints();
 		gests.push(newGest);
+		spawn_pos = createVector(mouseX, mouseY);
+		playcount = 0;
 }
 
 function colorToIndex(colorVar) {
@@ -118,20 +142,7 @@ function pathToSprite(path) {
 	}
 }
 
-socket.on("backend to visual", (points, who5, sprite, colorVar, base) => {
-	console.log("Color: " + colorVar + " Who5: " + who5 + " Sprite: " + sprite + " Base: " + base);
-	if (points !== null && colorVar !== null) {
-		if (gests.length > 20) {
-			gests.shift();
-		}
-		let newGest = new Gesture(random(10), colorVar, colorToIndex(colorVar), random(10,50), 0, 0, pathToSprite(base), pathToSprite(sprite), points);
-		newGest.normalizePoints();
-		gests.push(newGest);
-	}
-	else {
-		console.log("Missing Either Color Or Points");
-	}
-});
+
 
 function hexToRgb(hex) {
 	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
@@ -170,3 +181,21 @@ function space(w, h, star_count, star_size) {
 		}
 	}
 }
+
+function spawn(scale, count, radius) {
+	if (playcount > -1 && playcount < 11) {
+	  push();
+	  imageMode(CENTER);
+	  translate(spawn_pos.x, spawn_pos.y);
+	  for (let i = 0; i <= floor(count); i++) {
+		rotate(radians(360 / floor(count)));
+		image(spawn_gif, -radius, -radius, scale * 100, scale * 100);
+	  }
+	  pop();
+	  playcount++;
+	} else if (playcount >= 11) {
+	  playcount = -1;
+	  spawn_gif = loadImage("assets/sprites/spawn.gif");
+	}
+  }
+
