@@ -50,15 +50,15 @@ function setup() {
 	spawn_pos = createVector(width/2, height/2);
 }
 function draw() {
-    //space(width, height, 200, 2);
+    space(width, height, 200, 2);
     imageMode(CENTER);
-    image(mask, width/2, height/2, width, height);
-        gests.forEach((g) => {
-            g.update(t);
-			g.drawNormalPoints(t);
-            g.drawSprites(t);
-			g.boundingCheck();
-        });
+    //image(mask, width/2, height/2, width, height);
+	gests.forEach((g) => {
+		g.update(t);
+		g.drawNormalPoints(t);
+		g.drawSprites(t);
+		g.boundingCheck();
+	});
 	
 	spawn(0.8, 5, 10);
 
