@@ -14,8 +14,8 @@ let base_sprites = [];
 let skin_sprites = [];
 
 // arrays of sprite names
-names = [ "bread", "drops", "rombo", "star", "swirl" ];
-base_names = ["circle", "cloud", "cube", "heart", "spiky" ];
+let names = [ "bread", "drops", "rombo", "star", "swirl" ];
+let base_names = ["circle", "cloud", "cube", "heart", "spiky" ];
 
 // collision mask
 let mask;
