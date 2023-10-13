@@ -6,6 +6,7 @@ const joins = ["MITER", "BEVEL", "ROUND"];
 let gests = [];
 let t = 0;
 
+let debugDisplay = false;
 
 // arrays of sprites
 let base_sprites = [];
@@ -29,6 +30,7 @@ let spawn_pos;
 
     // preload images
 function preload() {
+	console.log("toggleDebug()");
 	for (let i = 0; i < names.length; i++) {
 		let gifs = [];
 		let base_gifs = [];
@@ -51,10 +53,24 @@ function setup() {
 	frameRate(24);
 	spawn_pos = createVector(width/2, height/2);
 }
+
+function toggleDebug() {
+	debugDisplay = !debugDisplay;
+	if(debugDisplay) {
+		document.getElementById("body").style.backgroundColor = "red";
+	} else {
+		document.getElementById("body").style.backgroundColor = "black";
+	}
+	console.log("Debug Display: " + debugDisplay);
+}
 function draw() {
-    space(width, height, 200, 2);
+	if(debugDisplay) {
+		image(mask, width/2, height/2, width, height);
+	} else {
+		space(width, height, 200, 2);
+	}
     imageMode(CENTER);
-    //image(mask, width/2, height/2, width, height);
+    
 	gests.forEach((g) => {
 		g.update(t);
 		g.drawNormalPoints(t);
