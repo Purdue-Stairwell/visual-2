@@ -6,6 +6,8 @@ const joins = ["MITER", "BEVEL", "ROUND"];
 let gests = [];
 let t = 0;
 
+const maxSquiggles = 25;
+
 let debugDisplay = false;
 
 // arrays of sprites
@@ -27,6 +29,12 @@ let stars_made = false;
 //spawn stuff
 let playcount = -1;
 let spawn_pos;
+
+//spawn boundary (do width - outer/inner for right side)
+let top_bound;
+let outer_bound;
+let bottom_bound;
+let inner_bound; 
 
     // preload images
 function preload() {
@@ -52,6 +60,15 @@ function setup() {
 	createCanvas(mask.width, mask.height);
 	frameRate(24);
 	spawn_pos = createVector(width/2, height/2);
+	imageMode(CENTER);
+	rectMode(CORNERS);
+	strokeJoin(ROUND);
+    strokeCap(ROUND);
+    noFill();
+	top_bound = height*0.25;
+	outer_bound = width * 0.175;
+	bottom_bound = height*0.98;
+	inner_bound = width * 0.35;
 }
 
 function toggleDebug() {
@@ -69,30 +86,43 @@ function draw() {
 	} else {
 		space(width, height, 200, 2);
 	}
-    imageMode(CENTER);
-    
-	gests.forEach((g) => {
-		g.update(t);
+     
+	for(let g of gests){
+		g.update();
 		g.drawNormalPoints(t);
 		g.drawSprites(t);
 		g.boundingCheck();
-	});
-	
+	}
+	//draw spawn animation
 	spawn(0.8, 5, 10);
+	
+	if(debugDisplay) {
+		stroke(0,0,255);
+		strokeWeight(2);
+		noFill();
+		rect(outer_bound, top_bound, inner_bound, bottom_bound);
+		rect(width - outer_bound, top_bound, width - inner_bound, bottom_bound);
+	}
+
+	
+
 
 	t += 0.1;
+
+	console.log(frameRate());
 }
 
 socket.on("backend to visual", (points, who5, sprite, colorVar, base) => {
 	console.log("Color: " + colorVar + " Who5: " + who5 + " Sprite: " + sprite + " Base: " + base);
 	if (points !== null && colorVar !== null) {
-		if (gests.length > 20) {
+		if (gests.length > maxSquiggles) {
 			gests.shift();
 		}
-		let newGest = new Gesture(colorVar, colorToIndex(colorVar), width/2, height/2, pathToSprite(sprite), pathToSprite(base), points);
+		let placeToSpawn = getSpawnLocation();
+		let newGest = new Gesture(colorVar, colorToIndex(colorVar), placeToSpawn.x, placeToSpawn.y, pathToSprite(sprite), pathToSprite(base), points);
 		newGest.normalizePoints();
 		gests.push(newGest);
-		spawn_pos = createVector(width/2, height/2);
+		spawn_pos = placeToSpawn;
 		playcount = 0;
 	}
 	else {
@@ -101,25 +131,26 @@ socket.on("backend to visual", (points, who5, sprite, colorVar, base) => {
 });
 
 function mouseClicked() {
-		if (gests.length > 20) {
+		if (gests.length > maxSquiggles) {
 			gests.shift();
 		}
-        points = [
-            createVector(0, 0),
-            createVector(40, 40),
-            createVector(80, 80),
-            createVector(120, 120),
-            createVector(160, 160),
-			createVector(300, 200),
-			createVector(340, 240),
-			createVector(380, 280),
-        ]
-		//                         color     colorIndex               x       y       skin,  base, points
-		let newGest = new Gesture("#4d26db", colorToIndex("#4d26db"), mouseX, mouseY, 0,     3,    points);
+        points = [];
+		for(let i = 0; i < 24; i++) {
+			points.push(createVector(i * random(-10,10), i * random(-10,10)));
+		}
+		let placeToSpawn = getSpawnLocation();
+		//                         color     colorIndex               x               y               skin, base, points
+		let newGest = new Gesture("#4d26db", colorToIndex("#4d26db"), placeToSpawn.x, placeToSpawn.y, 0,    3,    points);
 		newGest.normalizePoints();
 		gests.push(newGest);
-		spawn_pos = createVector(mouseX, mouseY);
+		spawn_pos = placeToSpawn;
 		playcount = 0;
+}
+
+function getSpawnLocation() {
+	let x = random() > 0.5 ? random(outer_bound, inner_bound) : random(width - inner_bound, width - outer_bound);
+	let y = random(top_bound, bottom_bound);
+	return createVector(x, y);
 }
 
 function colorToIndex(colorVar) {
